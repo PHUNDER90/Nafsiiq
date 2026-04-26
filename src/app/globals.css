@@ -1,26 +1,172 @@
 @import "tailwindcss";
 
+/* ─── Dark mode via .dark class ─────────────────────────────────────────── */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─── Brand Design Tokens ────────────────────────────────────────────────── */
+@theme {
+  /* Primary: Indigo-Violet */
+  --color-primary:         #6C63FF;
+  --color-primary-dark:    #5A52E0;
+  --color-primary-light:   #8B85FF;
+  --color-primary-faint:   #EEF0FF;
+
+  /* Secondary: Teal */
+  --color-secondary:       #00C9A7;
+  --color-secondary-dark:  #00A88C;
+
+  /* Accent: Rose */
+  --color-accent:          #FF6584;
+  --color-accent-dark:     #E84D6E;
+
+  /* Surface */
+  --color-surface:         #FFFFFF;
+  --color-surface-dark:    #16162A;
+  --color-muted:           #F1F1F8;
+  --color-muted-dark:      #1E1E35;
+  --color-border:          #E2E2EF;
+  --color-border-dark:     #2A2A45;
+
+  /* Background */
+  --color-bg:              #F8F7FF;
+  --color-bg-dark:         #0F0F1A;
+
+  /* Status */
+  --color-success:         #22C55E;
+  --color-warning:         #F59E0B;
+  --color-error:           #EF4444;
+
+  /* Typography */
+  --font-sans:    var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-arabic:  var(--font-tajawal), ui-sans-serif, sans-serif;
+  --font-display: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
+
+  /* Radius */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   16px;
+  --radius-xl:   24px;
+  --radius-full: 9999px;
+}
+
+/* ─── Runtime CSS variables (switched by .dark class) ────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg:             #F8F7FF;
+  --surface:        #FFFFFF;
+  --surface-2:      #F1F1F8;
+  --border:         #E2E2EF;
+  --text:           #1A1A2E;
+  --text-muted:     #6B7280;
+  --primary:        #6C63FF;
+  --primary-faint:  #EEF0FF;
+  --primary-dark: #5A52E0;
+  --secondary:    #00C9A7;
+  --accent:       #FF6584;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  --bg:             #0F0F1A;
+  --surface:        #16162A;
+  --surface-2:      #1E1E35;
+  --border:         #2A2A45;
+  --text:           #E8E8F8;
+  --text-muted:     #9CA3AF;
+  --primary:        #7B74FF;
+  --primary-dark:   #6C63FF;
+  --secondary:      #00C9A7;
+  --accent:         #FF6584;
+  --primary-faint:  #1E1A4A;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* ─── Base Styles ────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+body[dir="rtl"] { font-family: var(--font-arabic); }
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #6C63FF44; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #6C63FF88; }
+
+::selection { background: #6C63FF33; }
+
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+
+/* ─── Keyframes ──────────────────────────────────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-12px); }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px 0 rgb(108 99 255 / 0.3); }
+  50%       { box-shadow: 0 0 40px 0 rgb(108 99 255 / 0.6); }
+}
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.animate-float      { animation: float 3s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+.animate-gradient   { background-size: 200% 200%; animation: gradient-shift 4s ease infinite; }
+.animate-spin-slow  { animation: spin-slow 8s linear infinite; }
+
+/* ─── Glassmorphism ──────────────────────────────────────────────────────── */
+.glass {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.dark .glass { background: rgba(22,22,42,0.7); border-color: rgba(255,255,255,0.06); }
+
+/* ─── Gradient text ──────────────────────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #6C63FF 0%, #00C9A7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.gradient-text-warm {
+  background: linear-gradient(135deg, #FF6584 0%, #6C63FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Backgrounds ────────────────────────────────────────────────────────── */
+.bg-hero-gradient {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, #6C63FF22 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 80% 80%, #00C9A722 0%, transparent 60%),
+    var(--bg);
+}
+.bg-primary-gradient { background: linear-gradient(135deg, #6C63FF 0%, #5A52E0 100%); }
+
+/* ─── Card hover ─────────────────────────────────────────────────────────── */
+.card-hover { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+.card-hover:hover { transform: translateY(-4px); box-shadow: 0 10px 40px -4px rgb(108 99 255 / 0.18); }
+
+/* ─── Typography helpers ─────────────────────────────────────────────────── */
+.heading-xl { font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; }
+.heading-lg { font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
+.heading-md { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 700; line-height: 1.3; }
+.heading-sm { font-size: clamp(1.1rem, 2vw, 1.4rem); font-weight: 600; line-height: 1.4; }
