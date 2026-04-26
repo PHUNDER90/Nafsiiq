@@ -75,8 +75,8 @@
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/nafsiiq.git
-cd nafsiiq
+git clone https://github.com/Ya-az/Nafsiiq.git
+cd Nafsiiq
 ```
 
 ### 2. Install dependencies
