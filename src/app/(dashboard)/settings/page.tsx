@@ -33,7 +33,7 @@ export default function SettingsPage() {
     setProfileLoading(true);
     setProfileMsg("");
     try {
-      const res = await fetch(`/api/users/${user?._id}`, {
+      const res = await fetch(`/api/users/${user?.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -62,7 +62,7 @@ export default function SettingsPage() {
     setPwLoading(true);
     setPwMsg("");
     try {
-      const res = await fetch(`/api/users/${user?._id}/password`, {
+      const res = await fetch(`/api/users/${user?.id}/password`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

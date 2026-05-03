@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <div align="center">
 
 # 🧠 Nafsiiq
@@ -203,3 +204,7 @@ Distributed under the [MIT License](LICENSE).
 <div align="center">
 Made with ❤️ · <strong>Nafsiiq</strong>
 </div>
+=======
+# Nafsiiq
+..
+>>>>>>> 7bfa6af409c2865a8953af3f1be7d419b1631f6d

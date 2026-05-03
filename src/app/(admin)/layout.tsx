@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Users, ShieldCheck, Menu } from "lucide-react";
+import { LayoutDashboard, Users, ShieldCheck, Menu, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Logo } from "@/components/shared/Logo";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -71,7 +71,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             );
           })}
         </nav>
-        <div className="p-4 border-t border-[var(--border)]">
+        <div className="p-4 border-t border-[var(--border)] space-y-3">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-primary-gradient flex items-center justify-center text-white font-bold text-sm">
               {user?.name?.[0]?.toUpperCase()}
@@ -81,6 +81,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <p className="text-xs text-[var(--primary)] font-medium">Admin</p>
             </div>
           </div>
+          <button
+            onClick={async () => { await logout(); router.push("/login"); }}
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm font-medium text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[#EF4444] transition-colors"
+          >
+            <LogOut size={16} />
+            {dir === "rtl" ? "تسجيل الخروج" : "Sign Out"}
+          </button>
         </div>
       </aside>
 

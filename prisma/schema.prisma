@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String    @id @db.Uuid
+  name         String    @db.VarChar(100)
+  email        String    @unique @db.VarChar(255)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  role         UserRole  @default(user)
+  avatarUrl    String?   @map("avatar_url") @default("")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+  sessions     Session[]
+
+  @@map("users")
+}
+
+model Personality {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique @db.VarChar(10)
+  nameAr      String   @map("name_ar") @db.VarChar(50)
+  emoji       String   @db.VarChar(10)
+  descriptionAr String @map("description_ar") @db.Text
+  color       String   @db.VarChar(20)
+  results     Result[]
+
+  @@map("personalities")
+}
+
+model Axis {
+  id        Int        @id @default(autoincrement())
+  nameAr    String     @map("name_ar") @db.VarChar(50)
+  questions Question[]
+
+  @@map("axes")
+}
+
+model Question {
+  id        Int      @id @default(autoincrement())
+  axisId    Int      @map("axis_id")
+  axis      Axis     @relation(fields: [axisId], references: [id])
+  orderNum  Int      @map("order_num")
+  textAr    String   @map("text_ar") @db.Text
+  options   Option[]
+  answers   Answer[]
+
+  @@map("questions")
+}
+
+model Option {
+  id           Int           @id @default(autoincrement())
+  questionId   Int           @map("question_id")
+  question     Question      @relation(fields: [questionId], references: [id])
+  orderNum     Int           @map("order_num")
+  textAr       String        @map("text_ar") @db.Text
+  scores       OptionScore[]
+  answers      Answer[]
+
+  @@map("options")
+}
+
+model OptionScore {
+  id            Int         @id @default(autoincrement())
+  optionId      Int         @map("option_id")
+  option        Option      @relation(fields: [optionId], references: [id])
+  personalityId Int         @map("personality_id")
+  points        Int
+
+  @@unique([optionId, personalityId])
+  @@map("option_scores")
+}
+
+model Session {
+  id          Int       @id @default(autoincrement())
+  userId      String?   @map("user_id") @db.Uuid
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  startedAt   DateTime  @default(now()) @map("started_at") @db.Timestamp(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamp(6)
+  isComplete  Boolean   @default(false) @map("is_complete")
+  answers     Answer[]
+  results     Result[]
+
+  @@map("sessions")
+}
+
+model Answer {
+  id         Int      @id @default(autoincrement())
+  sessionId  Int      @map("session_id")
+  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  questionId Int      @map("question_id")
+  question   Question @relation(fields: [questionId], references: [id])
+  optionId   Int      @map("option_id")
+  option     Option   @relation(fields: [optionId], references: [id])
+
+  @@unique([sessionId, questionId])
+  @@map("answers")
+}
+
+model Result {
+  id            Int         @id @default(autoincrement())
+  sessionId     Int         @map("session_id")
+  session       Session     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  personalityId Int         @map("personality_id")
+  personality   Personality @relation(fields: [personalityId], references: [id])
+  totalPoints   Int         @map("total_points")
+  maxPoints     Int         @map("max_points")
+  percentage    Float
+  rank          Int
+  psychologistNotes String? @map("psychologist_notes") @default("")
+  recommendations   String? @default("")
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("results")
+}
+
+enum UserRole {
+  user
+  psychologist
+  admin
+}

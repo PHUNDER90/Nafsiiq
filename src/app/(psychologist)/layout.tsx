@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Menu } from "lucide-react";
+import { LayoutDashboard, Menu, LogOut } from "lucide-react";
 import { useState } from "react";
 import { Logo } from "@/components/shared/Logo";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -13,7 +13,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils/cn";
 
 export default function PsychologistLayout({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
   const { dir } = useLanguage();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -56,7 +56,7 @@ export default function PsychologistLayout({ children }: { children: React.React
             {dir === "rtl" ? "نتائج المرضى" : "Patient Results"}
           </Link>
         </nav>
-        <div className="p-4 border-t border-[var(--border)]">
+        <div className="p-4 border-t border-[var(--border)] space-y-3">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-[#00C9A7] flex items-center justify-center text-white font-bold text-sm">
               {user?.name?.[0]?.toUpperCase()}
@@ -68,6 +68,13 @@ export default function PsychologistLayout({ children }: { children: React.React
               </p>
             </div>
           </div>
+          <button
+            onClick={async () => { await logout(); router.push("/login"); }}
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm font-medium text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[#EF4444] transition-colors"
+          >
+            <LogOut size={16} />
+            {dir === "rtl" ? "تسجيل الخروج" : "Sign Out"}
+          </button>
         </div>
       </aside>
 

@@ -6,152 +6,100 @@ import { motion } from "framer-motion";
 import { FileText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { personalities } from "@/lib/mbti/personalities";
 import { formatDate } from "@/lib/utils/cn";
-import type { TestResult } from "@/types";
+import type { SessionResult } from "@/types";
 
 export default function ReportsPage() {
   const { token } = useAuth();
-  const { t, dir, locale } = useLanguage();
-  const [results, setResults] = useState<TestResult[]>([]);
+  const [results, setResults] = useState<SessionResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetch_ = async () => {
-      try {
-        const res = await fetch("/api/results", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setResults(data.results || []);
-        }
-      } catch {}
-      finally { setIsLoading(false); }
-    };
-    if (token) fetch_(); else setIsLoading(false);
+    if (!token) { setIsLoading(false); return; }
+    fetch("/api/results", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.results) setResults(d.results); })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
   }, [token]);
 
-  const handleExportPDF = async (result: TestResult) => {
+  const handleExportPDF = async (r: SessionResult) => {
     try {
       const { jsPDF } = await import("jspdf");
-      const info = personalities[result.type];
       const doc = new jsPDF();
-
-      doc.setFontSize(22);
-      doc.text(`Nafsiiq — ${result.type}`, 20, 30);
-
-      doc.setFontSize(14);
-      doc.text(info.name_en, 20, 44);
-      doc.text(info.tagline_en, 20, 54);
-
-      doc.setFontSize(11);
-      doc.text(`Completed: ${formatDate(result.completedAt, "en")}`, 20, 70);
-
+      doc.setFontSize(20);
+      doc.text(`Nafsiiq — ${r.top.nameAr} (${r.top.percentage}%)`, 20, 30);
+      doc.setFontSize(12);
+      doc.text(`Completed: ${formatDate(r.completedAt, "en")}`, 20, 44);
       doc.setFontSize(13);
-      doc.text("Strengths:", 20, 90);
+      doc.text("Top 3 personalities:", 20, 60);
       doc.setFontSize(10);
-      info.strengths_en.forEach((s, i) => doc.text(`• ${s}`, 24, 100 + i * 8));
-
-      doc.setFontSize(13);
-      doc.text("Weaknesses:", 20, 100 + info.strengths_en.length * 8 + 8);
-      doc.setFontSize(10);
-      info.weaknesses_en.forEach((w, i) =>
-        doc.text(`• ${w}`, 24, 110 + info.strengths_en.length * 8 + i * 8)
-      );
-
-      doc.save(`nafsiiq_${result.type}_${result._id}.pdf`);
+      r.topThree.forEach((p, i) => doc.text(`${i + 1}. ${p.nameAr} — ${p.percentage}%`, 24, 72 + i * 10));
+      doc.save(`nafsiiq_${r.top.code}_${r.sessionId}.pdf`);
     } catch (err) {
       console.error("PDF export failed", err);
     }
   };
 
   return (
-    <div dir={dir} className="space-y-6">
+    <div dir="rtl" className="space-y-6">
       <div>
-        <h1 className="heading-sm text-[var(--text)]">{t("navReports")}</h1>
-        <p className="text-sm text-[var(--text-muted)] mt-1">
-          {dir === "rtl" ? "سجل جميع اختباراتك السابقة" : "History of all your past tests"}
-        </p>
+        <h1 className="text-2xl font-black text-[var(--text)]">سجل الاختبارات</h1>
+        <p className="text-sm text-[var(--text-muted)] mt-1">جميع اختباراتك السابقة</p>
       </div>
 
       {isLoading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 w-full rounded-2xl" />)}
-        </div>
+        <div className="space-y-4">{[1,2,3].map((i) => <Skeleton key={i} className="h-24 w-full rounded-2xl" />)}</div>
       ) : results.length === 0 ? (
         <Card className="text-center py-16">
           <CardContent>
             <FileText size={48} className="mx-auto text-[var(--text-muted)] mb-4 opacity-40" />
-            <p className="text-[var(--text-muted)]">{t("noData")}</p>
+            <p className="text-[var(--text-muted)]">لا توجد نتائج بعد</p>
             <Link href="/test" className="mt-4 inline-block">
-              <Button variant="gradient">{t("startTest")}</Button>
+              <Button variant="gradient">ابدأ الاختبار</Button>
             </Link>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
-          {results.map((result, i) => {
-            const info = personalities[result.type];
-            return (
-              <motion.div
-                key={result._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06 }}
-              >
-                <Card className="hover:shadow-md transition-shadow">
-                  <CardContent className="flex flex-col sm:flex-row sm:items-center gap-4 p-5">
-                    {/* Type badge */}
-                    <div
-                      className="w-16 h-16 rounded-2xl flex-shrink-0 flex flex-col items-center justify-center text-white shadow-md"
-                      style={{ background: info.color }}
-                    >
-                      <span className="text-lg">{info.emoji}</span>
-                      <span className="text-xs font-black">{result.type}</span>
+          {results.map((r, i) => (
+            <motion.div key={r.sessionId} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
+              <Card className="hover:shadow-md transition-shadow">
+                <CardContent className="flex flex-col sm:flex-row sm:items-center gap-4 p-5">
+                  <div className="w-16 h-16 rounded-2xl flex-shrink-0 flex items-center justify-center text-3xl shadow-md" style={{ background: `${r.top.color}22` }}>
+                    {r.top.emoji}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <h3 className="font-bold text-[var(--text)]">{r.top.nameAr}</h3>
+                      <span className="text-sm font-bold px-2 py-0.5 rounded-full text-white" style={{ background: r.top.color }}>
+                        {r.top.percentage}%
+                      </span>
                     </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <h3 className="font-bold text-[var(--text)]">
-                          {locale === "ar" ? info.name_ar : info.name_en}
-                        </h3>
-                        <Badge variant="secondary">{result.type}</Badge>
-                      </div>
-                      <p className="text-xs text-[var(--text-muted)]">
-                        {t("completedOn")} {formatDate(result.completedAt, locale)}
-                      </p>
-                      {result.psychologistNotes && (
-                        <p className="text-xs text-[var(--primary)] mt-1 truncate">
-                          📝 {dir === "rtl" ? "يوجد ملاحظات من المعالج" : "Psychologist notes available"}
-                        </p>
-                      )}
+                    <p className="text-xs text-[var(--text-muted)]">{formatDate(r.completedAt, "ar")}</p>
+                    <div className="flex gap-2 mt-1 flex-wrap">
+                      {r.topThree.slice(1).map((p) => (
+                        <span key={p.personalityId} className="text-xs text-[var(--text-muted)]">{p.emoji} {p.nameAr} {p.percentage}%</span>
+                      ))}
                     </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-2 flex-shrink-0">
-                      <Link href={`/results/${result._id}`}>
-                        <Button variant="outline" size="sm">{t("viewResult")}</Button>
-                      </Link>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleExportPDF(result)}
-                        title={dir === "rtl" ? "تصدير PDF" : "Export PDF"}
-                      >
-                        <Download size={14} />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })}
+                    {r.psychologistNotes && (
+                      <p className="text-xs text-[var(--primary)] mt-1">📝 يوجد ملاحظات من المعالج</p>
+                    )}
+                  </div>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Link href={`/results/${r.sessionId}`}>
+                      <Button variant="outline" size="sm">عرض النتيجة</Button>
+                    </Link>
+                    <Button variant="ghost" size="sm" onClick={() => handleExportPDF(r)} title="تصدير PDF">
+                      <Download size={14} />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
         </div>
       )}
     </div>

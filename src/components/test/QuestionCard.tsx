@@ -1,52 +1,44 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
-import { DimensionBadge } from "./DimensionBadge";
-import { LikertScale } from "./LikertScale";
-import { useLanguage } from "@/contexts/LanguageContext";
-import type { TestQuestion, TestAnswer } from "@/types";
+import type { TestQuestion } from "@/types";
 
-interface QuestionCardProps {
+interface Props {
   question: TestQuestion;
   index: number;
   total: number;
-  currentAnswer: TestAnswer | undefined;
-  onSelect: (value: number) => void;
+  selectedOptionId: number | undefined;
+  onSelect: (optionId: number) => void;
 }
 
-export function QuestionCard({
-  question,
-  index,
-  total,
-  currentAnswer,
-  onSelect,
-}: QuestionCardProps) {
-  const { locale } = useLanguage();
-
+export function QuestionCard({ question, index, total, selectedOptionId, onSelect }: Props) {
   return (
     <Card className="overflow-hidden">
-      {/* Colour stripe */}
-      <div className="h-1 w-full bg-gradient-to-r from-[#6C63FF] via-[#00C9A7] to-[#FF6584]" />
-
-      <CardContent className="p-6 sm:p-8">
-        {/* Top row: dimension + counter */}
-        <div className="flex items-center justify-between mb-6">
-          <DimensionBadge dimension={question.dimension} />
-          <span className="text-xs font-medium text-[var(--text-muted)] tabular-nums">
-            {index + 1} / {total}
-          </span>
-        </div>
-
-        {/* Question text */}
-        <p className="text-lg font-medium text-[var(--text)] leading-relaxed mb-8">
-          {locale === "ar" ? question.text_ar : question.text_en}
-        </p>
-
-        {/* Likert scale */}
-        <LikertScale
-          selected={currentAnswer?.value ?? null}
-          onSelect={onSelect}
-        />
+      <div className="px-6 pt-5 pb-2">
+        <p className="text-xs font-semibold text-[var(--primary)] mb-1">{question.axisNameAr}</p>
+        <p className="text-xs text-[var(--text-muted)] mb-3">{index + 1} / {total}</p>
+        <h2 className="text-lg font-bold text-[var(--text)] leading-relaxed">{question.textAr}</h2>
+      </div>
+      <CardContent className="px-6 pb-6 pt-3 space-y-3">
+        {question.options.map((opt) => {
+          const selected = selectedOptionId === opt.id;
+          return (
+            <motion.button
+              key={opt.id}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onSelect(opt.id)}
+              className={[
+                "w-full px-4 py-3 rounded-xl border text-sm font-medium transition-all duration-150 text-start",
+                selected
+                  ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-md"
+                  : "bg-[var(--surface-2)] text-[var(--text)] border-[var(--border)] hover:border-[var(--primary)]",
+              ].join(" ")}
+            >
+              {opt.textAr}
+            </motion.button>
+          );
+        })}
       </CardContent>
     </Card>
   );

@@ -1,30 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useSearchParams, useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { RotateCcw, ArrowLeft, Share2 } from "lucide-react";
+import { ArrowRight, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { personalities } from "@/lib/mbti/personalities";
-import { getDimensionPercentages } from "@/lib/mbti/calculator";
-import { TypeHeroCard } from "@/components/results/TypeHeroCard";
-import { DimensionBars } from "@/components/results/DimensionBars";
-import { MBTIRadarChart } from "@/components/results/MBTIRadarChart";
-import { TraitsList } from "@/components/results/TraitsList";
-import { CareerGrid } from "@/components/results/CareerGrid";
-import { FamousPeople } from "@/components/results/FamousPeople";
-import type { TestResult, MBTIType } from "@/types";
+import { personalities } from "@/lib/personality/personalities";
+import { formatDate } from "@/lib/utils/cn";
+import type { SessionResult } from "@/types";
 
 function Section({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay, ease: "easeOut" }}
+      transition={{ duration: 0.45, delay, ease: "easeOut" }}
     >
       {children}
     </motion.div>
@@ -33,195 +26,189 @@ function Section({ children, delay = 0 }: { children: React.ReactNode; delay?: n
 
 export default function ResultsPage() {
   const { id } = useParams<{ id: string }>();
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const { t, dir, locale } = useLanguage();
   const { token } = useAuth();
-
-  const [result, setResult] = useState<TestResult | null>(null);
+  const [result, setResult] = useState<SessionResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const previewType =
-    id === "preview" ? (searchParams.get("type") as MBTIType | null) : null;
-
   useEffect(() => {
-    if (previewType) { setIsLoading(false); return; }
     if (!token) { setIsLoading(false); return; }
     fetch(`/api/results/${id}`, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.ok ? r.json() : null)
-      .then((data) => { if (data?.result) setResult(data.result); })
+      .then((d) => { if (d?.result) setResult(d.result); })
       .catch(() => {})
       .finally(() => setIsLoading(false));
-  }, [id, token, previewType]);
-
-  const mbtiType: MBTIType | null = result?.type ?? previewType ?? null;
-  const info = mbtiType ? personalities[mbtiType] : null;
-  const percentages = result?.scores ? getDimensionPercentages(result.scores) : null;
+  }, [id, token]);
 
   if (isLoading) {
     return (
-      <div dir={dir} className="max-w-3xl mx-auto py-8 space-y-5">
+      <div dir="rtl" className="max-w-2xl mx-auto py-8 space-y-4">
         <Skeleton className="h-10 w-48 rounded-xl" />
-        <Skeleton className="h-56 w-full rounded-2xl" />
         <Skeleton className="h-48 w-full rounded-2xl" />
-        <div className="grid grid-cols-2 gap-4">
-          <Skeleton className="h-40 rounded-2xl" />
-          <Skeleton className="h-40 rounded-2xl" />
-        </div>
-        <Skeleton className="h-32 w-full rounded-2xl" />
+        <Skeleton className="h-64 w-full rounded-2xl" />
       </div>
     );
   }
 
-  if (!info || !mbtiType) {
+  if (!result) {
     return (
-      <div className="max-w-3xl mx-auto text-center py-20" dir={dir}>
+      <div className="max-w-2xl mx-auto text-center py-20" dir="rtl">
         <p className="text-5xl mb-4">🔍</p>
-        <p className="text-xl font-semibold text-[var(--text)] mb-2">
-          {locale === "ar" ? "لم يتم العثور على النتيجة" : "Result not found"}
-        </p>
-        <p className="text-[var(--text-muted)] mb-6">{t("noData")}</p>
-        <Button onClick={() => router.push("/dashboard")}>{t("back")}</Button>
+        <p className="text-xl font-semibold text-[var(--text)] mb-4">لم يتم العثور على النتيجة</p>
+        <Button onClick={() => router.push("/dashboard")}>العودة للرئيسية</Button>
       </div>
     );
   }
 
-  const strengthsKey  = locale === "ar" ? "strengths_ar"  : "strengths_en"  as const;
-  const weaknessesKey = locale === "ar" ? "weaknesses_ar" : "weaknesses_en" as const;
-  const careersKey    = locale === "ar" ? "careers_ar"    : "careers_en"    as const;
+  const topInfo = personalities[result.top.code];
 
   return (
-    <div id="result-content" dir={dir} className="max-w-3xl mx-auto py-8 space-y-5">
+    <div dir="rtl" className="max-w-2xl mx-auto py-8 space-y-5">
 
-      {/* Actions row */}
-      <div className="flex items-center justify-between">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
-        >
-          <ArrowLeft size={16} className={dir === "rtl" ? "rotate-180" : ""} />
-          {t("back")}
-        </button>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => router.push("/test")}>
-            <RotateCcw size={14} />
-            {locale === "ar" ? "إعادة" : "Retake"}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigator.share?.({ title: `My MBTI: ${mbtiType}`, url: window.location.href })}
-          >
-            <Share2 size={14} />
-            {locale === "ar" ? "مشاركة" : "Share"}
-          </Button>
-        </div>
-      </div>
+      {/* Back */}
+      <button
+        onClick={() => router.back()}
+        className="flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+      >
+        <ArrowRight size={16} /> رجوع
+      </button>
 
-      {/* 1. Type hero */}
+      {/* 1 — Primary personality hero */}
       <Section delay={0.05}>
-        <TypeHeroCard type={mbtiType} info={info} />
-      </Section>
-
-      {/* 2. Dimension bars */}
-      {percentages && (
-        <Section delay={0.15}>
-          <Card>
-            <CardHeader><CardTitle>{t("yourScores")}</CardTitle></CardHeader>
-            <CardContent>
-              <DimensionBars percentages={percentages} />
-            </CardContent>
-          </Card>
-        </Section>
-      )}
-
-      {/* 3. Radar chart */}
-      {percentages && (
-        <Section delay={0.22}>
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {locale === "ar" ? "مخطط الشخصية الشعاعي" : "Personality Radar"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <MBTIRadarChart percentages={percentages} color={info.color} />
-            </CardContent>
-          </Card>
-        </Section>
-      )}
-
-      {/* 4. Strengths & Weaknesses */}
-      <Section delay={0.3}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader><CardTitle className="text-[#00C9A7]">{t("strengths")}</CardTitle></CardHeader>
-            <CardContent>
-              <TraitsList items={info[strengthsKey]} variant="strength" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader><CardTitle className="text-[#FF6584]">{t("weaknesses")}</CardTitle></CardHeader>
-            <CardContent>
-              <TraitsList items={info[weaknessesKey]} variant="weakness" />
-            </CardContent>
-          </Card>
-        </div>
-      </Section>
-
-      {/* 5. Career suggestions */}
-      <Section delay={0.38}>
-        <Card>
-          <CardHeader><CardTitle>{t("careerSuggestions")}</CardTitle></CardHeader>
-          <CardContent>
-            <CareerGrid careers={info[careersKey]} color={info.color} />
+        <Card className="overflow-hidden">
+          <div className="h-2 w-full" style={{ background: result.top.color }} />
+          <CardContent className="p-6">
+            <p className="text-xs text-[var(--text-muted)] mb-4">{formatDate(result.completedAt, "ar")}</p>
+            <div className="flex items-center gap-4 mb-4">
+              <div
+                className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl shadow-lg flex-shrink-0"
+                style={{ background: `${result.top.color}22`, border: `2px solid ${result.top.color}` }}
+              >
+                {result.top.emoji}
+              </div>
+              <div>
+                <p className="text-sm text-[var(--text-muted)] mb-0.5">شخصيتك الأساسية</p>
+                <h1 className="text-3xl font-black text-[var(--text)]">{result.top.nameAr}</h1>
+                <p className="text-lg font-bold mt-0.5" style={{ color: result.top.color }}>
+                  {result.top.percentage}%
+                </p>
+              </div>
+            </div>
+            {topInfo && (
+              <p className="text-sm text-[var(--text-muted)] leading-relaxed">{topInfo.descriptionAr}</p>
+            )}
           </CardContent>
         </Card>
       </Section>
 
-      {/* 6. Famous people */}
-      {info.famous_en.length > 0 && (
+      {/* 2 — Top 3 */}
+      <Section delay={0.15}>
+        <Card>
+          <CardHeader><CardTitle>أعلى 3 شخصيات لديك</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            {result.topThree.map((p, i) => (
+              <div key={p.personalityId}>
+                <div className="flex items-center gap-3 mb-1.5">
+                  <span className="text-xl">{p.emoji}</span>
+                  <span className="font-semibold text-sm text-[var(--text)] flex-1">{p.nameAr}</span>
+                  <span className="text-sm font-bold" style={{ color: p.color }}>{p.percentage}%</span>
+                </div>
+                <div className="h-3 bg-[var(--border)] rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${p.percentage}%` }}
+                    transition={{ duration: 0.8, delay: 0.2 + i * 0.1, ease: "easeOut" }}
+                    className="h-full rounded-full"
+                    style={{ background: p.color }}
+                  />
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </Section>
+
+      {/* 3 — All 10 personalities */}
+      <Section delay={0.25}>
+        <Card>
+          <CardHeader><CardTitle>نسبتك في جميع الشخصيات العشر</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            {result.all.map((p, i) => (
+              <div key={p.personalityId}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span>{p.emoji}</span>
+                  <span className="text-sm text-[var(--text)] flex-1">{p.nameAr}</span>
+                  <span className="text-xs font-semibold text-[var(--text-muted)]">{p.percentage}%</span>
+                </div>
+                <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${p.percentage}%` }}
+                    transition={{ duration: 0.6, delay: 0.3 + i * 0.05, ease: "easeOut" }}
+                    className="h-full rounded-full"
+                    style={{ background: p.color }}
+                  />
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </Section>
+
+      {/* 4 — Traits & careers */}
+      {topInfo && (
+        <Section delay={0.35}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader><CardTitle className="text-[#00C9A7]">صفاتك البارزة</CardTitle></CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {topInfo.traitsAr.map((t) => (
+                    <li key={t} className="flex items-center gap-2 text-sm text-[var(--text)]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#00C9A7] flex-shrink-0" />
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle className="text-[var(--primary)]">مجالات تناسبك</CardTitle></CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {topInfo.careersAr.map((c) => (
+                    <li key={c} className="flex items-center gap-2 text-sm text-[var(--text)]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] flex-shrink-0" />
+                      {c}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </Section>
+      )}
+
+      {/* 5 — Psychologist notes */}
+      {result.psychologistNotes && (
         <Section delay={0.45}>
           <Card>
-            <CardHeader>
-              <CardTitle>
-                {locale === "ar" ? "أشخاص مشهورون بهذا النوع" : "Famous People with This Type"}
-              </CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>ملاحظات المعالج النفسي</CardTitle></CardHeader>
             <CardContent>
-              <FamousPeople people={info.famous_en} color={info.color} />
+              <p className="text-sm text-[var(--text-muted)] leading-relaxed">{result.psychologistNotes}</p>
             </CardContent>
           </Card>
         </Section>
       )}
 
-      {/* 7. Psychologist notes */}
-      {result?.psychologistNotes && (
-        <Section delay={0.52}>
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {locale === "ar" ? "ملاحظات المعالج النفسي" : "Psychologist Notes"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-[var(--text-muted)] text-sm leading-relaxed">
-                {result.psychologistNotes}
-              </p>
-            </CardContent>
-          </Card>
-        </Section>
-      )}
-
-      {/* Bottom CTAs */}
-      <Section delay={0.56}>
+      {/* CTAs */}
+      <Section delay={0.5}>
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
           <Button variant="gradient" size="lg" className="flex-1" onClick={() => router.push("/dashboard")}>
-            {locale === "ar" ? "لوحة التحكم" : "Go to Dashboard"}
+            لوحة التحكم
           </Button>
           <Button variant="outline" size="lg" className="flex-1" onClick={() => router.push("/test")}>
-            <RotateCcw size={16} />
-            {t("takeAgain")}
+            <RotateCcw size={16} /> إعادة الاختبار
           </Button>
         </div>
       </Section>

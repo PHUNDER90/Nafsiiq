@@ -38,8 +38,10 @@ export default function LoginPage() {
     setIsLoading(true);
     setError("");
     try {
-      await login(email, password);
-      router.push("/dashboard");
+      const user = await login(email, password);
+      if (user.role === "admin") router.push("/admin");
+      else if (user.role === "psychologist") router.push("/psychologist");
+      else router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || t("error"));
     } finally {

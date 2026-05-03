@@ -2,61 +2,50 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Users, TestTube2, BarChart3, Activity } from "lucide-react";
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell
-} from "recharts";
+import { Users, TestTube2 } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { personalities } from "@/lib/mbti/personalities";
 import { formatDate } from "@/lib/utils/cn";
 
 interface StatsData {
   totalUsers: number;
   totalTests: number;
-  recentUsers: { _id: string; name: string; email: string; role: string; createdAt: string }[];
-  recentResults: { _id: string; type: string; completedAt: string }[];
-  typeDist: { _id: string; count: number }[];
+  recentUsers: { id: string; name: string; email: string; role: string; createdAt: string }[];
+  recentResults: { id: number; completedAt: string; top: { code: string; nameAr: string; emoji: string; color: string; percentage: number } | null }[];
+  typeDist: { code: string; nameAr: string; emoji: string; color: string; count: number }[];
 }
 
 export default function AdminPage() {
   const { token } = useAuth();
-  const { dir, locale } = useLanguage();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await fetch("/api/admin/stats", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) setStats(await res.json());
-      } catch {}
-      finally { setIsLoading(false); }
-    };
-    if (token) fetchStats(); else setIsLoading(false);
+    if (!token) { setIsLoading(false); return; }
+    fetch("/api/admin/stats", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setStats(d); })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
   }, [token]);
 
   const statCards = [
-    { icon: Users, label: dir === "rtl" ? "إجمالي المستخدمين" : "Total Users", value: stats?.totalUsers ?? "—", color: "#6C63FF" },
-    { icon: TestTube2, label: dir === "rtl" ? "إجمالي الاختبارات" : "Total Tests", value: stats?.totalTests ?? "—", color: "#00C9A7" },
+    { icon: Users,    label: "إجمالي المستخدمين", value: stats?.totalUsers ?? "—", color: "#6C63FF" },
+    { icon: TestTube2, label: "إجمالي الاختبارات", value: stats?.totalTests  ?? "—", color: "#00C9A7" },
   ];
 
-  const chartData = stats?.typeDist.slice(0, 8).map((d) => ({
-    type: d._id,
+  const chartData = stats?.typeDist.map((d) => ({
+    name: `${d.emoji} ${d.nameAr}`,
     count: d.count,
-    color: personalities[d._id as keyof typeof personalities]?.color || "#6C63FF",
-  })) || [];
+    color: d.color,
+  })) ?? [];
 
   return (
-    <div dir={dir} className="space-y-8">
-      <h1 className="heading-sm text-[var(--text)]">{dir === "rtl" ? "لوحة الإدارة" : "Admin Panel"}</h1>
+    <div dir="rtl" className="space-y-8">
+      <h1 className="text-2xl font-black text-[var(--text)]">لوحة الإدارة</h1>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {statCards.map((s, i) => {
           const Icon = s.icon;
@@ -78,20 +67,17 @@ export default function AdminPage() {
         })}
       </div>
 
-      {/* Type distribution chart */}
       {!isLoading && chartData.length > 0 && (
         <Card>
-          <CardHeader><CardTitle>{dir === "rtl" ? "توزيع الشخصيات" : "Personality Distribution"}</CardTitle></CardHeader>
+          <CardHeader><CardTitle>توزيع الشخصيات (الأكثر شيوعاً)</CardTitle></CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={chartData} margin={{ top: 4, right: 8, left: -8, bottom: 0 }}>
-                <XAxis dataKey="type" tick={{ fontSize: 11 }} />
+              <BarChart data={chartData} margin={{ top: 4, right: 8, left: -8, bottom: 40 }}>
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-20} textAnchor="end" />
                 <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                 <Tooltip />
                 <Bar dataKey="count" radius={[6, 6, 0, 0]}>
-                  {chartData.map((entry, i) => (
-                    <Cell key={i} fill={entry.color} />
-                  ))}
+                  {chartData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -100,16 +86,15 @@ export default function AdminPage() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent users */}
         <Card>
-          <CardHeader><CardTitle>{dir === "rtl" ? "أحدث المستخدمين" : "Recent Users"}</CardTitle></CardHeader>
+          <CardHeader><CardTitle>أحدث المستخدمين</CardTitle></CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="space-y-3">{[1,2,3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
             ) : (
               <div className="space-y-3">
                 {stats?.recentUsers.map((u) => (
-                  <div key={u._id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--surface-2)] transition-colors">
+                  <div key={u.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--surface-2)] transition-colors">
                     <div className="w-9 h-9 rounded-xl bg-primary-gradient flex items-center justify-center text-white font-bold text-sm">
                       {u.name[0].toUpperCase()}
                     </div>
@@ -117,7 +102,7 @@ export default function AdminPage() {
                       <p className="text-sm font-semibold text-[var(--text)] truncate">{u.name}</p>
                       <p className="text-xs text-[var(--text-muted)] truncate">{u.email}</p>
                     </div>
-                    <Badge variant="secondary">{u.role}</Badge>
+                    <span className="text-xs bg-[var(--surface-2)] px-2 py-0.5 rounded-full text-[var(--text-muted)]">{u.role}</span>
                   </div>
                 ))}
               </div>
@@ -125,28 +110,24 @@ export default function AdminPage() {
           </CardContent>
         </Card>
 
-        {/* Recent results */}
         <Card>
-          <CardHeader><CardTitle>{dir === "rtl" ? "أحدث النتائج" : "Recent Results"}</CardTitle></CardHeader>
+          <CardHeader><CardTitle>أحدث الاختبارات</CardTitle></CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="space-y-3">{[1,2,3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
             ) : (
               <div className="space-y-3">
-                {stats?.recentResults.map((r) => {
-                  const info = personalities[r.type as keyof typeof personalities];
-                  return (
-                    <div key={r._id} className="flex items-center gap-3 p-2 rounded-lg">
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-bold" style={{ background: info?.color }}>
-                        {r.type}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-[var(--text)]">{locale === "ar" ? info?.name_ar : info?.name_en}</p>
-                        <p className="text-xs text-[var(--text-muted)]">{formatDate(r.completedAt, locale)}</p>
-                      </div>
+                {stats?.recentResults.map((r) => r.top && (
+                  <div key={r.id} className="flex items-center gap-3 p-2 rounded-lg">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: `${r.top.color}22` }}>
+                      {r.top.emoji}
                     </div>
-                  );
-                })}
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--text)]">{r.top.nameAr} — {r.top.percentage}%</p>
+                      <p className="text-xs text-[var(--text-muted)]">{formatDate(r.completedAt, "ar")}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>

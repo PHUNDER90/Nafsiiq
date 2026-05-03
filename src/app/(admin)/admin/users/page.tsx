@@ -12,7 +12,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { formatDate } from "@/lib/utils/cn";
 
 interface AdminUser {
-  _id: string;
+  id: string;
   name: string;
   email: string;
   role: "user" | "psychologist" | "admin";
@@ -50,7 +50,7 @@ export default function AdminUsersPage() {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) setUsers((prev) => prev.filter((u) => u._id !== userId));
+      if (res.ok) setUsers((prev) => prev.filter((u) => u.id !== userId));
     } catch {}
     finally { setDeletingId(null); }
   };
@@ -75,7 +75,7 @@ export default function AdminUsersPage() {
             <div className="space-y-2">
               {users.map((u, i) => (
                 <motion.div
-                  key={u._id}
+                  key={u.id}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05 }}
@@ -90,15 +90,17 @@ export default function AdminUsersPage() {
                     <p className="text-xs text-[var(--text-muted)]">{formatDate(u.createdAt, locale)}</p>
                   </div>
                   <Badge variant={roleVariant(u.role)}>{u.role}</Badge>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(u._id)}
-                    loading={deletingId === u._id}
-                    className="text-[#EF4444] hover:bg-[#EF444422] hover:text-[#EF4444]"
-                  >
-                    <Trash2 size={14} />
-                  </Button>
+                  {u.role !== "admin" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(u.id)}
+                      loading={deletingId === u.id}
+                      className="text-[#EF4444] hover:bg-[#EF444422] hover:text-[#EF4444]"
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                  )}
                 </motion.div>
               ))}
             </div>
