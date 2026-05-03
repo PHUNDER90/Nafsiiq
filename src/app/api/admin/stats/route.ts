@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 
     const recentUsers = recentUserRows.map(formatUser);
 
-    const recentResults = recentSessions.map((s) => ({
+    const recentResults = recentSessions.map((s: any) => ({
       id: s.id,
       completedAt: s.completedAt?.toISOString() ?? "",
       top: s.results[0]
