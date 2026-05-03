@@ -4,3 +4,4 @@ import { questions } from "@/lib/mbti/questions";
 export async function GET(_req: NextRequest) {
   return NextResponse.json({ questions });
 }
+export const dynamic = 'force-dynamic'; 

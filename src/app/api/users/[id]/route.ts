@@ -74,3 +74,4 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+export const dynamic = 'force-dynamic'; 

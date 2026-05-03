@@ -11,3 +11,4 @@ export async function POST() {
   });
   return res;
 }
+export const dynamic = 'force-dynamic'; 
