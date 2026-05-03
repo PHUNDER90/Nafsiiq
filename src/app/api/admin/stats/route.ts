@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
     // Resolve personality names for distribution
     const personalities = await prisma.personality.findMany();
     const pMap = Object.fromEntries(personalities.map((p: any) => [p.id, p]));
-    const typeDist = personalityGroups.map((g) => ({
+    const typeDist = personalityGroups.map((g: any) => ({
       code: pMap[g.personalityId]?.code ?? String(g.personalityId),
       nameAr: pMap[g.personalityId]?.nameAr ?? "",
       emoji: pMap[g.personalityId]?.emoji ?? "",
