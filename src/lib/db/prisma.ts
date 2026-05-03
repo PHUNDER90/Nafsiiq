@@ -2,12 +2,15 @@ import { PrismaClient } from "@prisma/client";
  
 const globalForPrisma = global as unknown as { prisma: PrismaClient | undefined }; 
  
-const isBuild = process.env.NEXT_PHASE === 'phase-production-build'; 
+if (!process.env.DATABASE_URL) { 
+  throw new Error("DATABASE_URL environment variable is not set"); 
+} 
  
-const createClient = () => new PrismaClient(); 
+let prisma: PrismaClient; 
+prisma = globalForPrisma.prisma ?? new PrismaClient(); 
  
-export const prisma = isBuild ? ({} as PrismaClient) : (globalForPrisma.prisma ?? createClient()); 
- 
-if (!isBuild && process.env.NODE_ENV !== "production") { 
+if (process.env.NODE_ENV !== "production") { 
   globalForPrisma.prisma = prisma; 
 } 
+ 
+export { prisma }; 
