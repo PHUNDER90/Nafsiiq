@@ -1,15 +1,17 @@
-<<<<<<< HEAD
 <div align="center">
 
-# 🧠 Nafsiiq
+# نفسيّك — Nafsiiq
 
-### MBTI Personality Intelligence Platform
+### Arabic Personality Assessment Platform
 **اكتشف شخصيتك الحقيقية — Discover Your True Personality**
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.2-black?logo=next.js)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org)
-[![MongoDB](https://img.shields.io/badge/MongoDB-8.2-green?logo=mongodb)](https://www.mongodb.com)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?logo=postgresql)](https://www.postgresql.org)
+[![Prisma](https://img.shields.io/badge/Prisma-7.8-2D3748?logo=prisma)](https://www.prisma.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+**[🌐 Live Demo](https://nafsiiq-production.up.railway.app)**
 
 </div>
 
@@ -17,7 +19,7 @@
 
 ## 📖 Description
 
-**Nafsiiq** is a full-stack, bilingual (Arabic / English) personality assessment platform built on the **Myers-Briggs Type Indicator (MBTI)** framework. Users complete a 40-question test and instantly receive a rich, visualised personality profile — complete with interactive charts, career guidance, strength/weakness breakdowns, and famous people who share their type.
+**Nafsiiq** is a full-stack bilingual (Arabic / English) personality assessment platform. Users complete a 24-question Arabic test and receive a detailed personality profile scored across **10 personality archetypes**. Licensed psychologists can review results and add personalised notes. Admins manage users and monitor platform statistics.
 
 ---
 
@@ -25,13 +27,16 @@
 
 | Feature | Details |
 |---|---|
-| 🎯 **MBTI Test Engine** | 40 standardised questions across 4 dimensions |
-| 📊 **Data Visualisation** | Radar chart, dimension bars, percentage scores |
+| 🎯 **Personality Test** | 24 Arabic questions across 5 psychological axes |
+| 📊 **Rich Results** | Percentage breakdown across all 10 personality types |
+| 🧠 **10 Archetypes** | Unique Arabic personality types with traits & career paths |
 | 🌍 **Bilingual UI** | Full Arabic (RTL) & English (LTR) support |
 | 🎨 **Modern Design** | Tailwind CSS v4, Framer Motion animations |
-| 👤 **Rich Profiles** | Strengths, weaknesses, careers, famous people |
-| 🔐 **Secure Auth** | JWT-based authentication with bcrypt |
-| 💾 **Result History** | Save and review past test results |
+| 🔐 **Secure Auth** | JWT authentication with bcrypt (12 rounds) |
+| 👨‍⚕️ **Psychologist Panel** | Review sessions and add professional notes |
+| 🛡️ **Admin Dashboard** | User management, stats, personality distribution chart |
+| 💾 **Test History** | Save and review all past results |
+| 📄 **PDF Export** | Download your personality report |
 | 📱 **Responsive** | Mobile-first layout |
 
 ---
@@ -48,21 +53,12 @@
 
 **Backend & Data**
 - [Next.js API Routes](https://nextjs.org/docs/app/building-your-application/routing/route-handlers)
-- [MongoDB 8.2](https://www.mongodb.com) + [Mongoose](https://mongoosejs.com)
-- [Zustand](https://zustand-demo.pmnd.rs) — state management
+- [PostgreSQL](https://www.postgresql.org) + [Prisma 7](https://www.prisma.io)
+- [Zustand](https://zustand-demo.pmnd.rs) — test session state
 - [JWT](https://jwt.io) + [bcryptjs](https://github.com/dcodeIO/bcrypt.js)
 
----
-
-## 📸 Screenshots
-
-> Add screenshots to `/public/screenshots/` and uncomment below
-
-<!--
-| Landing Page | Test Screen | Results Page |
-|---|---|---|
-| ![Landing](public/screenshots/landing.png) | ![Test](public/screenshots/test.png) | ![Results](public/screenshots/results.png) |
--->
+**Hosting**
+- [Railway](https://railway.app) — app + managed PostgreSQL
 
 ---
 
@@ -70,13 +66,13 @@
 
 ### Prerequisites
 
-- **Node.js** ≥ 18
-- **MongoDB** 8.0+ (local or [Atlas](https://www.mongodb.com/atlas))
+- **Node.js** ≥ 22
+- **PostgreSQL** 14+ (local or hosted)
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/Ya-az/Nafsiiq.git
+git clone https://github.com/PHUNDER90/Nafsiiq.git
 cd Nafsiiq
 ```
 
@@ -92,16 +88,25 @@ npm install
 cp .env.example .env.local
 ```
 
-Open `.env.local` and fill in your values (see [Environment Variables](#-environment-variables) below).
+Open `.env.local` and fill in your values:
 
-### 4. Start MongoDB (local)
+```env
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/nafsiiq
+JWT_SECRET=your-super-secret-jwt-key-32chars-min
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+### 4. Set up the database
 
 ```bash
-# macOS — Homebrew
-brew services start mongodb-community
+# Push schema to your PostgreSQL database
+npx prisma db push
 
-# Linux — systemd
-sudo systemctl start mongod
+# Seed personalities, questions and scoring data
+npx tsx prisma/seed.ts
+
+# Create admin & psychologist accounts
+npx tsx scripts/create-accounts.ts
 ```
 
 ### 5. Run the development server
@@ -116,11 +121,9 @@ Open [http://localhost:3000](http://localhost:3000) 🎉
 
 ## 🔑 Environment Variables
 
-Create a `.env.local` file in the project root (use `.env.example` as a template):
-
 | Variable | Required | Description |
 |---|---|---|
-| `MONGODB_URI` | ✅ | MongoDB connection string |
+| `DATABASE_URL` | ✅ | PostgreSQL connection string |
 | `JWT_SECRET` | ✅ | Secret key for JWT signing (≥32 chars) |
 | `NEXT_PUBLIC_APP_URL` | ✅ | Public base URL of the app |
 
@@ -132,29 +135,33 @@ Create a `.env.local` file in the project root (use `.env.example` as a template
 
 ```
 nafsiiq/
+├── prisma/
+│   ├── schema.prisma        # Database schema (8 models)
+│   └── seed.ts              # Seed personalities, questions & scores
+├── scripts/
+│   └── create-accounts.ts   # Create admin & psychologist accounts
 ├── src/
 │   ├── app/
-│   │   ├── (auth)/              # Login & Register pages
-│   │   ├── (dashboard)/         # Test, Results, Reports
-│   │   └── api/                 # REST API routes
+│   │   ├── (auth)/          # Login & Register pages
+│   │   ├── (dashboard)/     # Dashboard, Test, Results, Reports, Settings
+│   │   ├── (admin)/         # Admin panel & user management
+│   │   ├── (psychologist)/  # Psychologist panel
+│   │   └── api/             # REST API routes
 │   ├── components/
-│   │   ├── test/                # LikertScale, ProgressBar, QuestionCard…
-│   │   ├── results/             # TypeHeroCard, DimensionBars, RadarChart…
-│   │   ├── landing/             # HeroSection, FeatureCards…
-│   │   └── ui/                  # Button, Card, Skeleton…
+│   │   ├── test/            # QuestionCard, ProgressBar
+│   │   ├── ui/              # Button, Card, Input, Skeleton…
+│   │   └── shared/          # Logo
 │   ├── lib/
-│   │   ├── mbti/
-│   │   │   ├── calculator.ts    # Scoring logic
-│   │   │   ├── questions.ts     # 40 questions
-│   │   │   └── personalities.ts # 16 type profiles (EN + AR)
-│   │   └── db/                  # Mongoose models & connection
-│   ├── contexts/                # AuthContext, LanguageContext
-│   ├── store/                   # Zustand stores
-│   └── types/                   # Global TypeScript types
-├── public/
-├── .env.example                 # Template — safe to commit
-├── .env.local                   # Secrets — NEVER commit
-└── README.md
+│   │   ├── auth/            # JWT helpers, API auth middleware
+│   │   ├── db/              # Prisma client, formatters
+│   │   ├── personality/     # 10 personality definitions, calculator
+│   │   └── i18n/            # EN + AR translations
+│   ├── contexts/            # AuthContext, ThemeContext, LanguageContext
+│   ├── store/               # Zustand test session store
+│   └── types/               # Global TypeScript types
+├── .env.example             # Template — safe to commit
+├── railway.json             # Railway deployment config
+└── .node-version            # Node 22 (required)
 ```
 
 ---
@@ -163,35 +170,31 @@ nafsiiq/
 
 ```bash
 npm run dev        # Development server (Turbopack)
-npm run build      # Production build
+npm run build      # Production build (runs prisma generate first)
 npm run start      # Start production server
 npm run lint       # ESLint
 ```
 
 ---
 
-## 🔮 Future Improvements
+## 👥 Roles
 
-- [ ] OAuth (Google / GitHub) sign-in
-- [ ] PDF report export
-- [ ] Team / group personality compatibility feature
-- [ ] Admin psychologist dashboard
-- [ ] Push notifications & reminders
-- [ ] Progressive Web App (PWA) support
-- [ ] Dark / Light mode toggle
-- [ ] More personality frameworks (Big Five, Enneagram)
+| Role | Access |
+|---|---|
+| **User** | Take tests, view own results, export PDF |
+| **Psychologist** | View all sessions, add professional notes |
+| **Admin** | Full access — user management, platform statistics |
 
 ---
 
-## 🤝 Contributing
+## 🔮 Roadmap
 
-Contributions are welcome!
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feat/your-feature`
-3. Commit using [Conventional Commits](https://www.conventionalcommits.org/): `git commit -m "feat: add amazing feature"`
-4. Push: `git push origin feat/your-feature`
-5. Open a Pull Request
+- [ ] Admin UI for creating psychologist / admin accounts
+- [ ] Role promotion from admin panel
+- [ ] Rate limiting on auth endpoints
+- [ ] OAuth (Google) sign-in
+- [ ] Custom domain
+- [ ] PWA support
 
 ---
 
@@ -202,10 +205,5 @@ Distributed under the [MIT License](LICENSE).
 ---
 
 <div align="center">
-Made with ❤️ · <strong>Nafsiiq</strong>
+Made with ❤️ · <strong>Nafsiiq — نفسيّك</strong>
 </div>
-=======
-# Nafsiiq
-..
->>>>>>> 7bfa6af409c2865a8953af3f1be7d419b1631f6d
-" " 
